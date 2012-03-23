@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html manifest="memory.appcache">
   <head>
     <title>Memory</title>
     <link type="text/css" rel="stylesheet" media="screen" href="screen.css">
@@ -8,13 +8,9 @@
   <body>
     <div id="board" style="display:none">
     </div>
-
     <div id="cover" style="display:none">
       <a href="#" id="play-link">Play!</a>
     </div>
-
-    <script type="text/javascript" src="js/memory/goog/base.js"></script>
-    <script type="text/javascript" src="js/memory.js"></script>
-    <script type="text/javascript">goog.require('memory.core')</script>
+    <script type="text/javascript" src="memory.js"></script>
   </body>
 </html>

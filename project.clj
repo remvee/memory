@@ -6,5 +6,5 @@
   :plugins [[lein-cljsbuild "0.0.14"]]
   
   :cljsbuild {:source-path "src"
-              :compiler {:output-to "public/js/memory.js"
-                         :output-dir "public/js/memory"}})
+              :compiler {:optimizations :advanced
+                         :output-to "public/memory.js"}})
