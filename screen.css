@@ -1,0 +1,35 @@
+html {
+    font-family: sans-serif;
+}
+body {
+    margin: 0
+}
+div.card {
+    display: block;
+    float: left;
+    background: #ddd;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    border: solid black 2px;
+    overflow: hidden;
+    text-align: center;
+}
+div.card.open {
+    background: #f8f8f8;
+}
+div.card.cleared {
+    background: none;
+    border-color: transparent;
+}
+div.card div.face {
+    display: inline;
+    font-weight: bold;
+}
+div#cover {
+    text-align: center;
+    margin: .5em;
+}
+div#cover a {
+    text-decoration: none;
+    font-weight: bold;
+}
