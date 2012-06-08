@@ -20,6 +20,9 @@
 (def cards (atom []))
 (def current-selection (atom #{}))
 
+(def fast-click-event
+  (if (js* "'ontouchstart' in window") "touchstart" "mousedown"))
+
 (defn populate-cards!
   "Populate cards atom with a newly shuffled set of groups."
   []
@@ -89,7 +92,10 @@
   [pos]
   (doto (gdom/createElement "div")
     (gclasses/add "card")
-    (gevents/listen "click" (fn [] (handle-card-click! pos)))))
+    (gevents/listen fast-click-event
+                    (fn [event]
+                      (.preventDefault event)
+                      (handle-card-click! pos)))))
 
 (defn render-cards!
   "Render the cards on the board."
