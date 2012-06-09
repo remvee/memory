@@ -10,6 +10,9 @@
 
 (def cards (atom []))
 (def current-selection (atom #{}))
+(def clock-start (atom nil))
+
+(defn clock-now [] (.valueOf (js/Date.)))
 
 (defn card-element
   "Retrieve gdom element associate with card at pos."
@@ -39,15 +42,31 @@
   [pos]
   (gclasses/add (card-element pos) "cleared"))
 
+(defn display-score!
+  "Display score in time it took to finish the game."
+  []
+  (let [score (- (clock-now) @clock-start)
+        hundreds (mod (.round js/Math (/ score 10)) 100)
+        seconds (mod (.floor js/Math (/ score 1000)) 60)
+        minutes (.floor js/Math (/ score 60000))]
+    (set! (. (gdom/getElement "score") -innerHTML)
+          (str minutes ":" (if (< seconds 10) "0") seconds "." (if (< hundreds 10) "0") hundreds))))
+
 (defn game-over!
   "Render game over message."
   []
   (doto (gdom/getElement "board")
     (gstyle/showElement false)
     gdom/removeChildren)
+  (display-score!)
   (gstyle/showElement (gdom/getElement "cover") true))
 
 (def worker (atom nil))
+
+(defn cards-left
+  "List cards left in the game."
+  []
+  (filter identity @cards))
 
 (defn process-selection!
   "Process current selection, removing the cards when a group is cleared."
@@ -59,7 +78,7 @@
       (doseq [pos @current-selection] (clear-card! pos))
       (swap! cards (fn [cards]
                      (reduce #(assoc %1 %2 nil) cards @current-selection))))
-    (when (empty? (filter identity @cards))
+    (when (empty? (cards-left))
       (game-over!)))
   (reset! current-selection #{}))
 
@@ -75,7 +94,9 @@
     (swap! current-selection conj pos)
     (show-card! pos)
     (when (= (count @current-selection) *number-of-group*)
-      (reset! worker (.setTimeout js/window process-selection! 1000)))))
+      (if (= (count (cards-left)) *number-of-group*)
+        (process-selection!)
+        (reset! worker (.setTimeout js/window process-selection! 1000))))))
 
 (defn create-card-element!
   "Create dom element for a card and bind click listener."
@@ -120,7 +141,8 @@
   []
   (gstyle/showElement (gdom/getElement "cover") false)
   (populate-cards!)
-  (render-cards!))
+  (render-cards!)
+  (reset! clock-start (clock-now)))
 
 (defn insert-style!
   "Insert window size specific style."
@@ -138,7 +160,7 @@
                 border)
         style (gdom/createElement "style")]
     (gdom/append style (str "div.card{margin:" margin "px;width:" size "px;height:" size "px}"
-                            "div#cover,div.card div.face{font-size:" (floor (* size 0.8)) "px}"))
+                            "body{font-size:" (floor (* size 0.8)) "px}"))
     (gdom/append document/body style)))
 
 (defn ^:export load []
