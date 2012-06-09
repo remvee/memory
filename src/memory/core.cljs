@@ -5,29 +5,11 @@
             [goog.style :as gstyle]
             [clojure.browser.repl :as repl]))
 
-(defn shuffle
-  "Fisher–Yates shuffle"
-  [coll]
-  (reduce (fn [coll i]
-            (let [j (rand-int (count coll))]
-              (assoc coll i (nth coll j) j (nth coll i))))
-          (vec coll)
-          (range (count coll))))
-
 (def *number-of-cards* 10)
 (def *number-of-group* 2)
 
 (def cards (atom []))
 (def current-selection (atom #{}))
-
-(def fast-click-event
-  (if (js* "'ontouchstart' in window") "touchstart" "mousedown"))
-
-(defn populate-cards!
-  "Populate cards atom with a newly shuffled set of groups."
-  []
-  (reset! cards (vec (shuffle (mapcat (fn [a] (take *number-of-group* (repeat a)))
-                                      (range *number-of-cards*))))))
 
 (defn card-element
   "Retrieve gdom element associate with card at pos."
@@ -115,6 +97,31 @@
         (gdom/append board elm)))
     (gstyle/showElement board true)))
 
+(def fast-click-event
+  (if (js* "'ontouchstart' in window") "touchstart" "mousedown"))
+
+(defn shuffle
+  "Fisher–Yates shuffle"
+  [coll]
+  (reduce (fn [coll i]
+            (let [j (rand-int (count coll))]
+              (assoc coll i (nth coll j) j (nth coll i))))
+          (vec coll)
+          (range (count coll))))
+
+(defn populate-cards!
+  "Populate cards atom with a newly shuffled set of groups."
+  []
+  (reset! cards (vec (shuffle (mapcat (fn [a] (take *number-of-group* (repeat a)))
+                                      (range *number-of-cards*))))))
+
+(defn start-new-game!
+  "Start a new game of memory."
+  []
+  (gstyle/showElement (gdom/getElement "cover") false)
+  (populate-cards!)
+  (render-cards!))
+
 (defn insert-style!
   "Insert window size specific style."
   []
@@ -133,13 +140,6 @@
     (gdom/append style (str "div.card{margin:" margin "px;width:" size "px;height:" size "px}"
                             "div#cover,div.card div.face{font-size:" (floor (* size 0.8)) "px}"))
     (gdom/append document/body style)))
-
-(defn start-new-game!
-  "Start a new game of memory."
-  []
-  (gstyle/showElement (gdom/getElement "cover") false)
-  (populate-cards!)
-  (render-cards!))
 
 (defn ^:export load []
   (insert-style!)
