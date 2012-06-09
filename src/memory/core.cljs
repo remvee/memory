@@ -45,6 +45,18 @@
                        (gclasses/add "face")
                        (gdom/append (str (@cards pos)))))))))
 
+(defn hide-card!
+  "Hide card face for pos."
+  [pos]
+  (let [e (card-element pos)]
+    (gclasses/remove e "open")
+    (gdom/removeChildren e)))
+
+(defn clear-card!
+  "Clear card for pos from game."
+  [pos]
+  (gclasses/add (card-element pos) "cleared"))
+
 (defn game-over!
   "Render game over message."
   []
@@ -60,13 +72,9 @@
   []
   (reset! worker nil)
   (let [cleared (= 1 (count (into #{} (map @cards @current-selection))))]
-    (doseq [pos @current-selection]
-      (let [e (card-element pos)]
-        (doto e
-          (gclasses/remove "open")
-          (gclasses/enable "cleared" cleared))
-        (gdom/removeChildren e)))
+    (doseq [pos @current-selection] (hide-card! pos))
     (when cleared
+      (doseq [pos @current-selection] (clear-card! pos))
       (swap! cards (fn [cards]
                      (reduce #(assoc %1 %2 nil) cards @current-selection))))
     (when (empty? (filter identity @cards))
@@ -107,14 +115,11 @@
         (gdom/append board elm)))
     (gstyle/showElement board true)))
 
-(defn- floor
-  "Wrap js/Math.floor function."
-  [val] (.floor js/Math val))
-
 (defn insert-style!
   "Insert window size specific style."
   []
-  (let [border 6
+  (let [floor #(.floor js/Math %)
+        border 6
         margin (floor (max (/ window/innerWidth 200)
                            (/ window/innerHeight 200)))
         size (- (first (filter (fn [size]
