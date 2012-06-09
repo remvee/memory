@@ -141,9 +141,10 @@
   (populate-cards!)
   (render-cards!))
 
-(insert-style!)
-(gstyle/showElement (gdom/getElement "cover") true)
-(gevents/listen (gdom/getElement "play-link") "click" start-new-game!)
+(defn ^:export load []
+  (insert-style!)
+  (gstyle/showElement (gdom/getElement "cover") true)
+  (gevents/listen (gdom/getElement "play-link") "click" start-new-game!))
 
 (when (re-find #"\?debug" (. window/location -href))
   (repl/connect "http://localhost:9000/repl"))
