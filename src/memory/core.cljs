@@ -5,6 +5,12 @@
             [goog.style :as gstyle]
             [clojure.browser.repl :as repl]))
 
+(def window js/window)
+(def document js/document)
+
+(def fast-click-event
+  (if (js* "'ontouchstart' in window") "touchstart" "mousedown"))
+
 (def *number-of-cards* 10)
 (def *number-of-group* 2)
 
@@ -42,15 +48,18 @@
   [pos]
   (gclasses/add (card-element pos) "cleared"))
 
+(defn msec->str [msec]
+  (let [hundreds (mod (.round js/Math (/ msec 10)) 100)
+        seconds (mod (.floor js/Math (/ msec 1000)) 60)
+        minutes (.floor js/Math (/ msec 60000))]
+    (str minutes ":" (if (< seconds 10) "0") seconds "." (if (< hundreds 10) "0") hundreds)))
+
 (defn display-score!
   "Display score in time it took to finish the game."
   []
-  (let [score (- (clock-now) @clock-start)
-        hundreds (mod (.round js/Math (/ score 10)) 100)
-        seconds (mod (.floor js/Math (/ score 1000)) 60)
-        minutes (.floor js/Math (/ score 60000))]
+  (let [score (- (clock-now) @clock-start)]
     (set! (. (gdom/getElement "score") -innerHTML)
-          (str minutes ":" (if (< seconds 10) "0") seconds "." (if (< hundreds 10) "0") hundreds))))
+          (msec->str score))))
 
 (defn game-over!
   "Render game over message."
@@ -86,7 +95,7 @@
   "Handle card click for a given pos."
   [pos]
   (when @worker
-    (.clearTimeout js/window @worker)
+    (.clearTimeout window @worker)
     (process-selection!))
   (when (and (@cards pos)
              (not (@current-selection pos))
@@ -96,7 +105,7 @@
     (when (= (count @current-selection) *number-of-group*)
       (if (= (count (cards-left)) *number-of-group*)
         (process-selection!)
-        (reset! worker (.setTimeout js/window process-selection! 1000))))))
+        (reset! worker (.setTimeout window process-selection! 1000))))))
 
 (defn create-card-element!
   "Create dom element for a card and bind click listener."
@@ -118,18 +127,6 @@
         (gdom/append board elm)))
     (gstyle/showElement board true)))
 
-(def fast-click-event
-  (if (js* "'ontouchstart' in window") "touchstart" "mousedown"))
-
-(defn shuffle
-  "Fisher–Yates shuffle"
-  [coll]
-  (reduce (fn [coll i]
-            (let [j (rand-int (count coll))]
-              (assoc coll i (nth coll j) j (nth coll i))))
-          (vec coll)
-          (range (count coll))))
-
 (defn populate-cards!
   "Populate cards atom with a newly shuffled set of groups."
   []
@@ -149,24 +146,24 @@
   []
   (let [floor #(.floor js/Math %)
         border 6
-        margin (floor (max (/ window/innerWidth 200)
-                           (/ window/innerHeight 200)))
+        margin (floor (max (/ (.-innerWidth window) 200)
+                           (/ (.-innerHeight window) 200)))
         size (- (first (filter (fn [size]
                                  (< (floor (/ (* 2 *number-of-cards*)
-                                              (floor (/ window/innerWidth size))))
-                                    (floor (/ window/innerHeight size))))
+                                              (floor (/ (.-innerWidth window) size))))
+                                    (floor (/ (.-innerHeight window) size))))
                                (range 500 10 -10)))
                 (* 2 margin)
                 border)
         style (gdom/createElement "style")]
     (gdom/append style (str "div.card{margin:" margin "px;width:" size "px;height:" size "px}"
                             "body{font-size:" (floor (* size 0.8)) "px}"))
-    (gdom/append document/body style)))
+    (gdom/append (.-body document) style)))
 
 (defn ^:export load []
   (insert-style!)
   (gstyle/showElement (gdom/getElement "cover") true)
   (gevents/listen (gdom/getElement "play-link") "click" start-new-game!))
 
-(when (re-find #"\?debug" (. window/location -href))
+(when (re-find #"\?debug" (.. window -location -href))
   (repl/connect "http://localhost:9000/repl"))
