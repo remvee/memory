@@ -20,6 +20,12 @@
 
 (defn clock-now [] (.valueOf (js/Date.)))
 
+(defn local-storage-get [key]
+  (.getItem (.-localStorage window) key))
+
+(defn local-storage-set [key val]
+  (.setItem (.-localStorage window) key val))
+
 (defn card-element
   "Retrieve gdom element associate with card at pos."
   [pos]
@@ -54,21 +60,38 @@
         minutes (.floor js/Math (/ msec 60000))]
     (str minutes ":" (if (< seconds 10) "0") seconds "." (if (< hundreds 10) "0") hundreds)))
 
-(defn display-score!
-  "Display score in time it took to finish the game."
-  []
-  (let [score (- (clock-now) @clock-start)]
-    (set! (. (gdom/getElement "score") -innerHTML)
-          (msec->str score))))
+(defn handle-high-score! [current-score]
+  (let [high-score (local-storage-get "high-score")
+        high-score (if high-score (js/parseInt high-score) )
+        high-score (if (and high-score (< current-score high-score))
+                     current-score
+                     high-score)]
+    (local-storage-set "high-score" (if (nil? high-score) current-score high-score))
+    high-score))
+
+(defn score-message [current-score high-score]
+  (cond
+   (and high-score (= current-score high-score))
+   (str "High score! " (msec->str current-score))
+
+   high-score
+   (str (msec->str current-score)
+        "<br><small>(high score: " (msec->str high-score) ")</small>")
+
+   :else
+   (msec->str current-score)))
 
 (defn game-over!
   "Render game over message."
   []
-  (doto (gdom/getElement "board")
-    (gstyle/showElement false)
-    gdom/removeChildren)
-  (display-score!)
-  (gstyle/showElement (gdom/getElement "cover") true))
+  (let [current-score (- (clock-now) @clock-start)
+        high-score (handle-high-score! current-score)
+        score (score-message current-score high-score)]
+
+    (doto (gdom/getElement "board") (gstyle/showElement false) gdom/removeChildren)
+    (set! (. (gdom/getElement "score") -innerHTML) score)
+
+    (gstyle/showElement (gdom/getElement "cover") true)))
 
 (def worker (atom nil))
 

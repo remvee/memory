@@ -27,7 +27,7 @@ div.card div.face {
 }
 div#cover {
     text-align: center;
-    margin: .5em;
+    margin: .2em .5em;
 }
 div#cover a {
     text-decoration: none;
@@ -35,5 +35,6 @@ div#cover a {
     font-size: 100%;
 }
 div#score {
-    font-size: 60%;
+    font-size: 40%;
+    line-height: 1;
 }
